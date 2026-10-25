@@ -39,7 +39,17 @@ ${YAML.stringify(brand)}</brand>
   เช่น ข่าวช่องโหว่ → "a laptop on a dark desk showing a red security alert dashboard with a glowing shield icon" ห้ามมีตัวอักษรหรือโลโก้ในภาพ`;
 }
 
-export function slotPrompt({ date, slotPlan, groups, recentTopics, topicHint = '', tone = '', news = [] }) {
+// รูปแบบเนื้อหาแคปชันเพจ — ผู้ใช้เลือกได้ในหน้า "สร้างและโพสต์ทันที"
+export const FORMATS = [
+  { id: 'normal', name: 'โพสต์ทั่วไป', range: [300, 1200], brief: '' },
+  { id: 'article', name: 'บทความยาว', range: [1500, 4000],
+    brief: 'เขียนเป็นบทความยาวอ่านจบได้ใน 3–5 นาที: เปิดด้วยปัญหา/สถานการณ์ แบ่งหัวข้อย่อย 3–5 หัวข้อ (ขึ้นบรรทัดใหม่ ใช้เลขข้อหรือหัวข้อสั้นๆ) มีตัวอย่างหรือขั้นตอนที่ทำตามได้จริง แล้วสรุปท้ายบทความ' },
+  { id: 'ad', name: 'โพสต์โฆษณา', range: [200, 800],
+    brief: 'เขียนแบบโพสต์โฆษณาขายบริการ: ประโยคแรกดึงความสนใจด้วยปัญหาของลูกค้า บอกว่าเราช่วยอะไรได้ จุดเด่น 3–4 ข้อ ราคาเริ่มต้น (จากข้อมูลแพ็กเกจเท่านั้น) และปิดด้วยชวนทัก Inbox ปรึกษา/ประเมินราคาฟรี' },
+];
+export const getFormat = (id) => FORMATS.find((f) => f.id === id) ?? FORMATS[0];
+
+export function slotPrompt({ date, slotPlan, groups, recentTopics, topicHint = '', tone = '', format = '', news = [] }) {
   const p = slotPlan.pillar;
   const groupLines = slotPlan.groups.map(({ groupId, mode }) => {
     const g = groups.find((x) => x.id === groupId);
@@ -52,6 +62,7 @@ export function slotPrompt({ date, slotPlan, groups, recentTopics, topicHint = '
   }).join('\n');
   const needsSoft = slotPlan.groups.some((g) => g.mode === 'soft');
   const t = getTone(tone);
+  const f = getFormat(format);
   const mustNews = p.template === 'news';
   const newsLines = news
     .map((n, i) => `${i + 1}. [${n.source}] ${n.title}\n   ${n.url}${n.summary ? `\n   ${n.summary.slice(0, 140)}` : ''}`)
@@ -71,14 +82,15 @@ export function slotPrompt({ date, slotPlan, groups, recentTopics, topicHint = '
 หัวข้อที่เจ้าของเพจอยากให้เขียน: ${topicHint}
 (ยึดหัวข้อนี้เป็นหลัก แต่ข้อเท็จจริงทั้งหมดยังต้องมาจากข้อมูลแบรนด์เท่านั้น)` : ""}
 เทมเพลตภาพหลัก: ${p.template}
-น้ำเสียงของโพสต์นี้: ${t.name} — ${t.brief}
+น้ำเสียงของโพสต์นี้: ${t.name} — ${t.brief}${f.brief ? `
+รูปแบบเนื้อหา: ${f.name} — ${f.brief}` : ''}
 ${newsBlock}
 หัวข้อที่เคยโพสต์แล้ว (ห้ามซ้ำหรือคล้าย):
 ${recentTopics.length ? recentTopics.map((t) => `- ${t}`).join('\n') : '- (ยังไม่มี)'}
 
 สิ่งที่ต้องส่งกลับ:
 1. topic: หัวข้อใหม่ 1 บรรทัด
-2. caption: แคปชันโพสต์เพจ 300–1200 ตัวอักษร${slotPlan.isPromo ? ' จบด้วยชวนทักแชทเพจเพื่อประเมินราคาฟรี' : ' จบด้วยคำถามชวนคอมเมนต์'}
+2. caption: แคปชันโพสต์เพจ ${f.range[0]}–${f.range[1]} ตัวอักษร${slotPlan.isPromo ? ' จบด้วยชวนทักแชทเพจเพื่อประเมินราคาฟรี' : ' จบด้วยคำถามชวนคอมเมนต์'}
 3. hashtags: 0–3 อัน (รวมกับที่อยู่ใน caption แล้วต้องไม่เกิน 3)
 4. image: ข้อมูลสำหรับเทมเพลต "${p.template}"
    - kicker: ป้ายสั้นภาษาอังกฤษตัวพิมพ์ใหญ่ เช่น DEV TIP, REAL TALK, PROJECT, PACKAGE, POLL

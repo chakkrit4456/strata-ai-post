@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { loadProviders } from '../ai/providers.js';
-import { systemPrompt, slotPrompt } from './prompts.js';
-import { checkSlot } from './guard.js';
+import { systemPrompt, slotPrompt, getFormat } from './prompts.js';
+import { checkSlot, LIMITS } from './guard.js';
 
 const ImageSchema = z.object({
   kicker: z.string(),
@@ -58,11 +58,11 @@ export function parseContent(text) {
  * @returns {Promise<{content: object, attempts: number, issues: string[], provider: string, model: string}>}
  */
 export async function writeSlot({
-  date, slotPlan, groups, brand, history, topicHint = '', tone = '', news = [], providers = loadProviders(), rateLimitWaitMs = RATE_LIMIT_WAIT_MS,
+  date, slotPlan, groups, brand, history, topicHint = '', tone = '', format = '', news = [], providers = loadProviders(), rateLimitWaitMs = RATE_LIMIT_WAIT_MS,
 }) {
   if (!providers.length) throw new Error('ยังไม่ได้ตั้งคีย์ AI (GEMINI_API_KEY / GROQ_API_KEY / OPENROUTER_API_KEY)');
   const system = systemPrompt(brand) + SCHEMA_NOTE;
-  const firstPrompt = slotPrompt({ date, slotPlan, groups, recentTopics: history.topics.slice(0, 40), topicHint, tone, news });
+  const firstPrompt = slotPrompt({ date, slotPlan, groups, recentTopics: history.topics.slice(0, 40), topicHint, tone, format, news });
   const failures = [];
   let attempts = 0;
   let lastIssues = [];
@@ -106,7 +106,9 @@ export async function writeSlot({
         console.warn(`  ↪ ${provider.name}: ${e.message} — ลองเจ้าถัดไป`);
         break;
       }
-      const { issues } = checkSlot(content, slotPlan, { brand, history, news, requireNews: slotPlan.pillar.template === 'news' && news.length > 0 });
+      const { issues } = checkSlot(content, slotPlan, { brand, history, news, requireNews: slotPlan.pillar.template === 'news' && news.length > 0,
+        // เผื่อ AI เขียนขาด/เกินจากช่วงที่สั่งเล็กน้อย
+        captionRange: [Math.round(getFormat(format).range[0] / 2), Math.max(LIMITS.caption[1], getFormat(format).range[1] + 500)] });
       if (!issues.length) return { content, attempts, issues, provider: provider.name, model: reply.model };
 
       lastIssues = issues;

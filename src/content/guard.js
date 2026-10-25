@@ -70,10 +70,10 @@ function checkImage(label, img) {
  * @param {object} slotPlan  { isPromo, groups: [{groupId, mode}] }
  * @param {object} ctx       { brand, history: { topics: string[], captions: string[] } }
  */
-export function checkSlot(content, slotPlan, { brand, history = { topics: [], captions: [] }, news = null, requireNews = false }) {
+export function checkSlot(content, slotPlan, { brand, history = { topics: [], captions: [] }, news = null, requireNews = false, captionRange = LIMITS.caption }) {
   const issues = [];
   const pageMode = slotPlan.isPromo ? 'promo' : 'value';
-  issues.push(...checkText('แคปชันเพจ', content.caption, { brand, mode: pageMode, range: LIMITS.caption }));
+  issues.push(...checkText('แคปชันเพจ', content.caption, { brand, mode: pageMode, range: captionRange }));
   issues.push(...checkImage('ภาพหลัก', content.image));
   if (slotPlan.groups.some((g) => g.mode === 'soft')) {
     issues.push(...checkImage('ภาพแบบไม่ขาย', content.softImage));

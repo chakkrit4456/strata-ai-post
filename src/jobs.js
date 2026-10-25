@@ -56,10 +56,12 @@ export function resolveStyle({ theme = '', tone = '' } = {}, recent = db.recentP
  * ใช้ร่วมกันระหว่างโพสต์รายวันกับปุ่ม "สร้างและโพสต์ทันที"
  */
 async function buildSlot({
-  date, slotPlan, groups, brand, history, outRoot, status, style, news = [], aiImage = true, topicHint = '', onStep = () => {},
+  date, slotPlan, groups, brand, history, outRoot, status, style, news = [], aiImage = true, topicHint = '', format = '', onStep = () => {},
 }) {
+  // โพสต์โฆษณาขายได้เสมอ แม้หมวดจะเป็นแบบให้ความรู้ (เฉพาะแคปชันเพจ กลุ่มยังทำตามโหมดของกลุ่ม)
+  if (format === 'ad') slotPlan = { ...slotPlan, isPromo: true };
   onStep(`AI กำลังเขียนโพสต์ (ธีม ${getTheme(style.theme).name} · ${getTone(style.tone).name}${news.length ? ` · ข่าว ${news.length} รายการ` : ''})`);
-  const { content, attempts, provider, model } = await writeSlot({ date, slotPlan, groups, brand, history, topicHint, tone: style.tone, news });
+  const { content, attempts, provider, model } = await writeSlot({ date, slotPlan, groups, brand, history, topicHint, tone: style.tone, format, news });
   let bgPath = null;
   if (aiImage && content.image.visual) {
     onStep(`สร้างภาพประกอบด้วย AI (เขียนโดย ${provider}/${model})`);
@@ -371,10 +373,11 @@ export function startCreateNow(opts) {
 
 /**
  * @param {{ pillarId?: string, topicHint?: string, groupIds?: string[], preview?: boolean,
- *   theme?: string, tone?: string, aiImage?: boolean, newsUrl?: string }} o
+ *   theme?: string, tone?: string, format?: string, aiImage?: boolean, newsUrl?: string }} o
+ *   format: 'normal' | 'article' (บทความยาว) | 'ad' (โพสต์โฆษณา)
  *   theme: '' = อัตโนมัติ, 'brand' = ธีมเพจ, 'random' = สุ่ม, หรือ id · newsUrl: '' = ให้ AI เลือก, 'none' = ไม่ใช้ข่าว, หรือลิงก์ข่าว
  */
-function createNowTask({ pillarId = '', topicHint = '', groupIds = [], preview = true, theme = '', tone = '', aiImage = true, newsUrl = '' }) {
+function createNowTask({ pillarId = '', topicHint = '', groupIds = [], preview = true, theme = '', tone = '', format = '', aiImage = true, newsUrl = '' }) {
   // ข่าวที่เลือกเองตรวจตั้งแต่ตอนกด (แจ้ง error ทันที) ส่วนแบบอัตโนมัติเลือกตามหมวดหลังวางแผน
   const pickedNews = newsUrl ? newsFor({ newsUrl }) : null;
   const all = loadGroups();
@@ -397,7 +400,7 @@ function createNowTask({ pillarId = '', topicHint = '', groupIds = [], preview =
     let built;
     try {
       built = await buildSlot({
-        date, slotPlan, groups: chosen, brand, history, topicHint: hint, onStep: step, style, aiImage,
+        date, slotPlan, groups: chosen, brand, history, topicHint: hint, onStep: step, style, aiImage, format,
         news: pickedNews ?? newsFor({ pillar: slotPlan.pillar }),
         outRoot: path.join(mediaDir(), date), status: preview ? 'pending_approval' : 'approved',
       });

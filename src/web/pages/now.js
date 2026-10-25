@@ -7,6 +7,7 @@ import { jobBanner } from './queue.js';
 import { env } from '../../env.js';
 import * as db from '../../db.js';
 import { themePicker, toneOptions, PICKER_CSS } from '../picker.js';
+import { FORMATS } from '../../content/prompts.js';
 
 function styleSection(values) {
   const news = env.useNews ? db.freshNews({ days: 3, limit: 40 }) : [];
@@ -15,6 +16,7 @@ function styleSection(values) {
     ...news.map((n) => [n.url, `[${n.source}] ${n.title.slice(0, 90)}`])];
   return `${PICKER_CSS}<section class="card"><h2 style="margin-top:0">หน้าตาและสไตล์</h2>
     <div class="field"><span>ธีมภาพ (ชุดสี ฟอนต์ ลวดลาย)</span>${themePicker('theme', values.theme ?? '')}</div>
+    ${select('รูปแบบเนื้อหา', 'format', values.format ?? 'normal', FORMATS.map((x) => [x.id, `${x.name} (${x.range[0]}–${x.range[1]} ตัวอักษร)`]), { hint: 'บทความยาว = ให้ความรู้แบบละเอียด · โพสต์โฆษณา = ขายบริการ ชวนทัก Inbox' })}
     ${select('สไตล์คำบรรยาย', 'tone', values.tone ?? '', toneOptions())}
     ${select('ข่าว/เทรนด์ที่จะใช้', 'news', picked, newsOpts, { hint: 'เลือกหมวด "ข่าว/เทรนด์ล่าสุด" ถ้าอยากให้ทั้งโพสต์เล่าเรื่องข่าว' })}
     <label class="check"><input type="checkbox" name="aiImage" value="1"${values.aiImage === false ? '' : ' checked'}> สร้างภาพประกอบด้วย AI (ฟรี ใช้เวลาเพิ่ม ~10–30 วินาที)</label>
@@ -71,12 +73,12 @@ export const routes = [
     const f = ctx.form;
     const values = {
       pillar: f.pillar ?? '', topic: f.topic ?? '', groups: [].concat(f.groups ?? []), preview: f.preview === '1',
-      theme: f.theme ?? '', tone: f.tone ?? '', news: f.news ?? '', aiImage: f.aiImage === '1',
+      theme: f.theme ?? '', tone: f.tone ?? '', format: f.format ?? 'normal', news: f.news ?? '', aiImage: f.aiImage === '1',
     };
     try {
       startCreateNow({
         pillarId: values.pillar, topicHint: values.topic, groupIds: values.groups, preview: values.preview,
-        theme: values.theme, tone: values.tone, newsUrl: values.news, aiImage: values.aiImage,
+        theme: values.theme, tone: values.tone, format: values.format, newsUrl: values.news, aiImage: values.aiImage,
       });
     } catch (e) {
       return page(ctx, { error: e.message, values });
