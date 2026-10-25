@@ -33,8 +33,8 @@ function build() {
     openrouterModel: str('OPENROUTER_MODEL', 'google/gemma-4-31b-it:free,google/gemma-4-26b-a4b-it:free'),
 
     // ภาพประกอบจาก AI: ลองตามลำดับ ใส่ off เพื่อปิด
-    aiImageProviders: str('AI_IMAGE_PROVIDERS', 'pollinations,gemini').toLowerCase() === 'off' ? []
-      : str('AI_IMAGE_PROVIDERS', 'pollinations,gemini').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean),
+    aiImageProviders: str('AI_IMAGE_PROVIDERS', 'gemini,pollinations').toLowerCase() === 'off' ? []
+      : str('AI_IMAGE_PROVIDERS', 'gemini,pollinations').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean),
     geminiImageModel: str('GEMINI_IMAGE_MODEL', 'gemini-3.1-flash-image'),
     // ธีมโพสต์อัตโนมัติ: mix = ใช้ธีมเพจทุกๆ THEME_BRAND_EVERY โพสต์ ที่เหลือสุ่ม | random | brand
     themeMode: ['mix', 'random', 'brand'].includes(str('THEME_MODE')) ? str('THEME_MODE') : 'mix',

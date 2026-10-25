@@ -63,7 +63,7 @@ async function buildSlot({
   let bgPath = null;
   if (aiImage && content.image.visual) {
     onStep(`สร้างภาพประกอบด้วย AI (เขียนโดย ${provider}/${model})`);
-    bgPath = (await generateAiImage({ visual: content.image.visual, theme: style.theme, outBase: path.join(outRoot, `${slotPlan.slot}-bg`) })).file;
+    bgPath = (await generateAiImage({ visual: content.image.visual, theme: style.theme, layout: slotPlan.pillar.template, outBase: path.join(outRoot, `${slotPlan.slot}-bg`) })).file;
   }
   onStep('จัดหน้าภาพตามธีม');
   const newsItem = content.newsUrl ? news.find((n) => n.url === content.newsUrl) : null;
@@ -331,7 +331,7 @@ export async function savePostEdits(postId, { caption, image, items = {}, theme 
       if (job.running) throw new Error('มีงานสร้างโพสต์กำลังทำอยู่ รอให้เสร็จก่อนค่อยทำภาพใหม่');
       if (newAiImage) {
         const r = await generateAiImage({
-          visual: next.visual || post.topic, theme: nextTheme,
+          visual: next.visual || post.topic, theme: nextTheme, layout: templateFor(post.pillar),
           outBase: path.join(path.dirname(post.image_path), `${post.slot}-bg-${Date.now()}`),
         });
         if (!r.file) throw new Error(`สร้างภาพ AI ไม่สำเร็จ: ${r.error ?? 'ไม่ทราบสาเหตุ'}`);
